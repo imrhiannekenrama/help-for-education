@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Package, Edit, Trash2, UploadCloud, File as FileIcon, X, Link2 } from "lucide-react";
+import { Plus, Package, Edit, Trash2, UploadCloud, File as FileIcon, X, Link2, Image as ImageIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/use-toast";
 
 const FILE_BUCKET = "product-files";
+const IMAGE_BUCKET = "product-images";
 
 interface ProductFile {
   id: string;
@@ -49,6 +50,8 @@ export default function AdminProducts() {
   const [uploadMode, setUploadMode] = useState<"file" | "link">("file");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [existingFiles, setExistingFiles] = useState<ProductFile[]>([]);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
   const [form, setForm] = useState({
     name: "", description: "", price: "", image: "", file_size: "", download_url: "", features: "", bonuses: "",
   });
@@ -76,6 +79,8 @@ export default function AdminProducts() {
     setUploadMode("file");
     setSelectedFiles([]);
     setExistingFiles([]);
+    setImageFile(null);
+    setImagePreview("");
     setForm({ name: "", description: "", price: "", image: "", file_size: "", download_url: "", features: "", bonuses: "" });
     setOpen(true);
   }
@@ -83,6 +88,8 @@ export default function AdminProducts() {
   async function openEdit(p: Product) {
     setEditing(p);
     setSelectedFiles([]);
+    setImageFile(null);
+    setImagePreview(p.image || "");
     setForm({
       name: p.name, description: p.description, price: String(p.price), image: p.image || "",
       file_size: p.file_size || "", download_url: p.download_url || "",
@@ -101,6 +108,15 @@ export default function AdminProducts() {
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
     setSelectedFiles((prev) => [...prev, ...files]);
+  }
+
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setImagePreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
   }
 
   function removeSelectedFile(idx: number) {
@@ -123,6 +139,7 @@ export default function AdminProducts() {
       const slug = form.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
       let downloadUrl: string | null = null;
       let storagePath: string | null = null;
+      let imageUrl = form.image;
 
       if (uploadMode === "file") {
         if (selectedFiles.length === 0 && existingFiles.length === 0) {
@@ -136,9 +153,21 @@ export default function AdminProducts() {
         storagePath = null;
       }
 
+      // Upload image if a new one was selected
+      if (imageFile) {
+        const imgExt = imageFile.name.split(".").pop();
+        const imgPath = `${slug}/${Date.now()}.${imgExt}`;
+        const { error: imgError } = await supabase.storage
+          .from(IMAGE_BUCKET)
+          .upload(imgPath, imageFile, { upsert: true });
+        if (imgError) throw imgError;
+        const { data: pub } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(imgPath);
+        imageUrl = pub.publicUrl;
+      }
+
       const payload = {
         name: form.name, slug, description: form.description, price: parseFloat(form.price) || 0,
-        image: form.image || null, file_size: form.file_size || null,
+        image: imageUrl || null, file_size: form.file_size || null,
         download_url: downloadUrl, storage_path: storagePath,
         features: form.features ? form.features.split(",").map((s) => s.trim()).filter(Boolean) : [],
         bonuses: form.bonuses ? form.bonuses.split(",").map((s) => s.trim()).filter(Boolean) : [],
@@ -234,9 +263,13 @@ export default function AdminProducts() {
                 <TableRow key={p.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-emerald-500">
-                        <Package className="h-5 w-5 text-white" />
-                      </div>
+                      {p.image ? (
+                        <img src={p.image} alt={p.name} className="h-10 w-10 rounded-xl object-cover" />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-emerald-500">
+                          <Package className="h-5 w-5 text-white" />
+                        </div>
+                      )}
                       <span className="font-medium text-gray-900 dark:text-white">{p.name}</span>
                     </div>
                   </TableCell>
@@ -286,10 +319,29 @@ export default function AdminProducts() {
               <Label htmlFor="desc">Description</Label>
               <textarea id="desc" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="mt-1.5 flex min-h-[60px] w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white" placeholder="Short product description..." required />
             </div>
+
+            {/* Image Upload */}
             <div>
-              <Label htmlFor="image">Image URL (optional)</Label>
-              <Input id="image" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} className="mt-1.5" placeholder="https://..." />
+              <Label>Product Image</Label>
+              <div className="mt-1.5 space-y-3">
+                {imagePreview && (
+                  <div className="relative inline-block">
+                    <img src={imagePreview} alt="Preview" className="h-32 w-32 rounded-xl border border-gray-200 object-cover dark:border-gray-700" />
+                    <button type="button" onClick={() => { setImageFile(null); setImagePreview(""); setForm({ ...form, image: "" }); }} className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+                {!imagePreview && (
+                  <label htmlFor="image-upload" className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 py-6 hover:border-blue-500 dark:border-gray-700">
+                    <ImageIcon className="h-8 w-8 text-gray-400" />
+                    <span className="mt-2 text-xs text-gray-500">Click to upload product image</span>
+                  </label>
+                )}
+                <input id="image-upload" type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
+              </div>
             </div>
+
             <div>
               <Label htmlFor="filesize">File Size (optional)</Label>
               <Input id="filesize" value={form.file_size} onChange={(e) => setForm({ ...form, file_size: e.target.value })} className="mt-1.5" placeholder="2.4 GB" />
