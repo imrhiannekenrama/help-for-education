@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { use } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Package, ArrowLeft, Download, KeyRound, Check, ShieldCheck, FileArchive, MessageCircle } from "lucide-react";
@@ -27,23 +27,23 @@ interface Product {
   features: string[];
   bonuses: string[];
   file_size: string;
-  download_url: string;
 }
 
-export default function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = use(params);
+export default function ProductPage() {
+  const params = useParams();
+  const slug = params.slug as string;
   const { toast } = useToast();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [code, setCode] = useState("");
   const [verifying, setVerifying] = useState(false);
-  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [downloadUrls, setDownloadUrls] = useState<{ fileName: string; url: string }[] | null>(null);
 
   useEffect(() => {
     async function fetchProduct() {
       const { data } = await supabase
         .from("products")
-        .select("*")
+        .select("id, name, slug, description, long_description, price, image, features, bonuses, file_size")
         .eq("slug", slug)
         .eq("is_active", true)
         .single();
@@ -58,49 +58,28 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
     if (!code.trim() || !product) return;
 
     setVerifying(true);
-    setDownloadUrl(null);
+    setDownloadUrls(null);
 
     try {
-      // Check if code exists and is unused for this product
-      const { data: codeRecord, error: fetchError } = await supabase
-        .from("codes")
-        .select("id, code, status, product_id, product_name")
-        .eq("code", code.trim().toUpperCase())
-        .eq("status", "unused")
-        .single();
+      const res = await fetch("/api/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: code.trim(), slug: product.slug }),
+      });
+      const result = await res.json();
 
-      if (fetchError || !codeRecord) {
-        toast({ title: "Invalid Code", description: "This code is invalid or already used.", variant: "destructive" });
+      if (!res.ok || !result.downloadUrls) {
+        toast({
+          title: "Invalid Code",
+          description: result.error || "This code is invalid or already used.",
+          variant: "destructive",
+        });
         setVerifying(false);
         return;
       }
 
-      if (codeRecord.product_id !== product.id) {
-        toast({ title: "Wrong Product", description: "This code is not valid for this product.", variant: "destructive" });
-        setVerifying(false);
-        return;
-      }
-
-      // Mark code as used
-      const { error: updateError } = await supabase
-        .from("codes")
-        .update({
-          status: "used",
-          used_by_email: null,
-          used_at: new Date().toISOString(),
-        })
-        .eq("id", codeRecord.id)
-        .eq("status", "unused");
-
-      if (updateError) {
-        toast({ title: "Error", description: "Could not process code. Try again.", variant: "destructive" });
-        setVerifying(false);
-        return;
-      }
-
-      // Reveal download URL
-      setDownloadUrl(product.download_url);
-      toast({ title: "✅ Code Verified!", description: "Your download is ready below." });
+      setDownloadUrls(result.downloadUrls);
+      toast({ title: "Code Verified!", description: "Your downloads are ready below." });
     } catch {
       toast({ title: "Error", description: "Something went wrong. Try again.", variant: "destructive" });
     }
@@ -141,7 +120,6 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
           </Link>
 
           <div className="grid gap-8 lg:grid-cols-2">
-            {/* Left: Product Info */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
               <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
                 <div className="relative h-72 overflow-hidden bg-gray-100 dark:bg-gray-800">
@@ -166,7 +144,6 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                 </div>
               </div>
 
-              {/* Features & Bonuses */}
               {product.features.length > 0 && (
                 <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
                   <h3 className="font-semibold text-gray-900 dark:text-white">What's Included</h3>
@@ -193,10 +170,9 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
               )}
             </motion.div>
 
-            {/* Right: Download Section */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="lg:sticky lg:top-28 lg:self-start">
               <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-                {!downloadUrl ? (
+                {!downloadUrls ? (
                   <>
                     <div className="flex items-center gap-3">
                       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-emerald-500 text-white">
@@ -223,9 +199,9 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                         <ShieldCheck className="mr-1 inline h-4 w-4" />
                         Don't have a code yet?
                       </p>
-                      <p className="mt-1 text-xs text-gray-500">Message us on MessageCircle to order and get your unique download code.</p>
+                      <p className="mt-1 text-xs text-gray-500">Message us on Messenger to order and get your unique download code.</p>
                       <a href={FACEBOOK_PAGE} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400">
-                        <MessageCircle className="h-4 w-4" /> Visit our MessageCircle Page
+                        <MessageCircle className="h-4 w-4" /> Visit our Facebook Page
                       </a>
                     </div>
                   </>
@@ -235,12 +211,19 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                       <Check className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <h2 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">Code Verified!</h2>
-                    <p className="mt-2 text-sm text-gray-500">Your download is ready. Click below to get your file.</p>
-                    <a href={downloadUrl} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-500 px-6 py-3 font-medium text-white hover:opacity-90 transition-opacity">
-                      <Download className="h-5 w-5" /> Download Now
-                    </a>
+                    <p className="mt-2 text-sm text-gray-500">
+                      {downloadUrls.length > 1 ? "Your downloads are ready. Click each file below." : "Your download is ready. Click below to get your file."}
+                    </p>
+                    <div className="mt-6 space-y-3">
+                      {downloadUrls.map((file, i) => (
+                        <a key={i} href={file.url} target="_blank" rel="noopener noreferrer" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-500 px-6 py-3 font-medium text-white hover:opacity-90 transition-opacity">
+                          <Download className="h-5 w-5" />
+                          {downloadUrls.length > 1 ? `Download ${file.fileName}` : "Download Now"}
+                        </a>
+                      ))}
+                    </div>
                     <p className="mt-4 text-xs text-gray-400">
-                      <ShieldCheck className="inline h-3 w-3" /> Your code has been used and cannot be reused. Save the download link for future access.
+                      <ShieldCheck className="inline h-3 w-3" /> Your code has been used and cannot be reused. Download links expire in 5 minutes.
                     </p>
                   </motion.div>
                 )}
