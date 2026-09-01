@@ -59,7 +59,7 @@ export default function HomePage() {
                 </div>
                 <h1 className="text-4xl font-bold leading-tight tracking-tight text-gray-900 dark:text-white sm:text-5xl lg:text-6xl">
                   Premium Digital Products for{" "}
-                  <span className="bg-gradient-to-r from-blue-600 to-emerald-500 bg-clip-text text-transparent">Filipino Educators</span>
+                  <span className="bg-gradient-to-r from-blue-600 to-emerald-500 bg-clip-text text-transparent">Educators</span>
                 </h1>
                 <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-600 dark:text-gray-300">
                   Browse our collection of ready-to-use teaching resources. Pay via MessageCircle, get a download code, and access instantly.

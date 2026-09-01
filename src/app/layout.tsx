@@ -6,19 +6,19 @@ import { Toaster } from "@/components/ui/toaster";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Help for Education — Premium Digital Resources for Filipino Educators",
+  title: "Help for Education — Premium Digital Resources for Educators",
   description: "Premium digital educational resources for teachers. Lesson plans, worksheets, presentations, templates, and more.",
   keywords: ["education", "teaching resources", "lesson plans", "worksheets", "teacher bundle"],
   openGraph: {
     title: "Help for Education",
-    description: "Premium Digital Resources for Filipino Educators",
+    description: "Premium Digital Resources for Educators",
     type: "website",
     url: "https://help-for-education.vercel.app",
   },
   twitter: {
     card: "summary_large_image",
     title: "Help for Education",
-    description: "Premium Digital Resources for Filipino Educators",
+    description: "Premium Digital Resources for Educators",
   },
 };
 

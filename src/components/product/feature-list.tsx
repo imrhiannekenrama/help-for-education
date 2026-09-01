@@ -51,7 +51,7 @@ const DEFAULT_FEATURES: FeatureItem[] = [
   {
     id: 'f7',
     title: 'Remediation & Reading Intervention Materials (Phil-IRI)',
-    description: 'Complete diagnostic, passage reading, and comprehension assessment sheets in English and Filipino.',
+    description: 'Complete diagnostic, passage reading, and comprehension assessment sheets in English.',
     category: 'Intervention',
   },
   {

@@ -23,7 +23,7 @@ export const TEACHER_BUNDLE_PRODUCT: Product = {
   version: 'v2.5 Updated 2026',
   rating: 4.9,
   reviewsCount: 1240,
-  tagline: 'All-in-one DepEd compliant automated lesson planning, grading sheets, and classroom tools for Filipino Educators.',
+  tagline: 'All-in-one DepEd compliant automated lesson planning, grading sheets, and classroom tools forEducators.',
   description: 'Streamline your teaching tasks with over 500+ ready-to-use templates, automated grading tools, DepEd Form 137/138 automators, and interactive lesson presentation packs designed specifically for Philippine teachers.',
   gcashNumber: '0917-888-9922',
   gcashAccountName: 'HELP FOR EDUCATION INC.',

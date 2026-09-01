@@ -32,7 +32,7 @@ const DEFAULT_BONUSES: BonusItem[] = [
     title: 'Bonus #3: Complete Tagalog & English Storybooks Library (PDF & Audio)',
     value: '₱400 VALUE',
     badgeText: 'FREE BONUS',
-    description: 'Digital collection of classic Filipino storybooks and reading passages with comprehension questions for elementary students.',
+    description: 'Digital collection of classic storybooks and reading passages with comprehension questions for elementary students.',
   },
   {
     id: 'b4',

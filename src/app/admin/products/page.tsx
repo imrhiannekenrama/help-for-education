@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Package, Edit, Trash2, X } from "lucide-react";
+import { Plus, Package, Edit, Trash2, UploadCloud, File as FileIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/use-toast";
 
+const FILE_BUCKET = "product-files";
+
 interface Product {
   id: string;
   name: string;
@@ -22,7 +24,8 @@ interface Product {
   price: number;
   image: string;
   file_size: string;
-  download_url: string;
+  download_url: string | null;
+  storage_path: string | null;
   is_active: boolean;
   features: string[];
   bonuses: string[];
@@ -36,6 +39,8 @@ export default function AdminProducts() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploadMode, setUploadMode] = useState<"file" | "link">("file");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [form, setForm] = useState({
     name: "", description: "", price: "", image: "", file_size: "", download_url: "", features: "", bonuses: "",
   });
@@ -60,12 +65,16 @@ export default function AdminProducts() {
 
   function openAdd() {
     setEditing(null);
+    setUploadMode("file");
+    setSelectedFile(null);
     setForm({ name: "", description: "", price: "", image: "", file_size: "", download_url: "", features: "", bonuses: "" });
     setOpen(true);
   }
 
   function openEdit(p: Product) {
     setEditing(p);
+    setSelectedFile(null);
+    setUploadMode(p.storage_path ? "file" : "link");
     setForm({
       name: p.name, description: p.description, price: String(p.price), image: p.image || "",
       file_size: p.file_size || "", download_url: p.download_url || "",
@@ -79,14 +88,30 @@ export default function AdminProducts() {
     setSaving(true);
     try {
       const slug = form.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      let storagePath: string | null = editing?.storage_path || null;
+      let downloadUrl: string | null = editing?.download_url || null;
+
+      if (uploadMode === "file") {
+        if (selectedFile) {
+          const safeName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+          const path = `${slug}/${Date.now()}_${safeName}`;
+          const { error: uploadError } = await supabase.storage.from(FILE_BUCKET).upload(path, selectedFile, { upsert: true });
+          if (uploadError) throw uploadError;
+          storagePath = path;
+          downloadUrl = null;
+        } else if (!storagePath) {
+          throw new Error("Please choose a file to upload.");
+        }
+      } else {
+        if (!form.download_url.trim()) throw new Error("Please enter a download link.");
+        downloadUrl = form.download_url.trim();
+        storagePath = null;
+      }
+
       const payload = {
-        name: form.name,
-        slug,
-        description: form.description,
-        price: parseFloat(form.price) || 0,
-        image: form.image || null,
-        file_size: form.file_size || null,
-        download_url: form.download_url,
+        name: form.name, slug, description: form.description, price: parseFloat(form.price) || 0,
+        image: form.image || null, file_size: form.file_size || null,
+        download_url: downloadUrl, storage_path: storagePath,
         features: form.features ? form.features.split(",").map((s) => s.trim()).filter(Boolean) : [],
         bonuses: form.bonuses ? form.bonuses.split(",").map((s) => s.trim()).filter(Boolean) : [],
         is_active: true,
@@ -141,7 +166,7 @@ export default function AdminProducts() {
               <TableRow>
                 <TableHead>Product</TableHead>
                 <TableHead>Price</TableHead>
-                <TableHead>Download Link</TableHead>
+                <TableHead>File</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -160,7 +185,13 @@ export default function AdminProducts() {
                     </div>
                   </TableCell>
                   <TableCell>₱{p.price}</TableCell>
-                  <TableCell className="max-w-[200px] truncate text-xs text-gray-500">{p.download_url || "—"}</TableCell>
+                  <TableCell className="max-w-[200px] truncate text-xs text-gray-500">
+                    {p.storage_path ? (
+                      <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                        <FileIcon className="h-3 w-3" /> Uploaded file
+                      </span>
+                    ) : (p.download_url || "—")}
+                  </TableCell>
                   <TableCell><Badge variant={p.is_active ? "default" : "secondary"}>{p.is_active ? "Active" : "Inactive"}</Badge></TableCell>
                   <TableCell>
                     <div className="flex gap-2">
@@ -201,11 +232,42 @@ export default function AdminProducts() {
               <Label htmlFor="filesize">File Size (optional)</Label>
               <Input id="filesize" value={form.file_size} onChange={(e) => setForm({ ...form, file_size: e.target.value })} className="mt-1.5" placeholder="2.4 GB" />
             </div>
+
             <div>
-              <Label htmlFor="download">Download Link (Google Drive, Dropbox, etc.)</Label>
-              <Input id="download" value={form.download_url} onChange={(e) => setForm({ ...form, download_url: e.target.value })} className="mt-1.5" placeholder="https://drive.google.com/file/d/..." required />
-              <p className="mt-1 text-xs text-gray-400">This link is only revealed to customers with a valid code.</p>
+              <Label>Product File</Label>
+              <div className="mt-1.5 flex gap-2">
+                <button type="button" onClick={() => setUploadMode("file")} className={`flex-1 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${uploadMode === "file" ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300" : "border-gray-200 text-gray-500 dark:border-gray-700"}`}>
+                  <UploadCloud className="mr-1.5 inline h-4 w-4" /> Upload File
+                </button>
+                <button type="button" onClick={() => setUploadMode("link")} className={`flex-1 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${uploadMode === "link" ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300" : "border-gray-200 text-gray-500 dark:border-gray-700"}`}>
+                  External Link
+                </button>
+              </div>
+
+              {uploadMode === "file" ? (
+                <div className="mt-3">
+                  <input
+                    type="file"
+                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                    className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-blue-700 dark:text-gray-300"
+                  />
+                  {editing?.storage_path && !selectedFile && (
+                    <p className="mt-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                      <FileIcon className="mr-1 inline h-3 w-3" /> A file is already uploaded. Choose a new one to replace it.
+                    </p>
+                  )}
+                  <p className="mt-1.5 text-xs text-gray-400">
+                    The buyer gets a secure, time-limited download link only after entering a valid code.
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-3">
+                  <Input value={form.download_url} onChange={(e) => setForm({ ...form, download_url: e.target.value })} placeholder="https://drive.google.com/file/d/..." />
+                  <p className="mt-1.5 text-xs text-gray-400">This link is only revealed to customers with a valid code.</p>
+                </div>
+              )}
             </div>
+
             <div>
               <Label htmlFor="features">Features (comma-separated)</Label>
               <Input id="features" value={form.features} onChange={(e) => setForm({ ...form, features: e.target.value })} className="mt-1.5" placeholder="100+ Lesson Plans, 200+ Worksheets" />
