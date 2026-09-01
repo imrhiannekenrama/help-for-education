@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
     const { data: product, error: productError } = await supabaseAdmin
       .from("products")
-      .select("id, download_url, storage_path")
+      .select("id")
       .eq("slug", slug)
       .eq("is_active", true)
       .single();
@@ -52,24 +52,52 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Could not verify code." }, { status: 400 });
     }
 
-    let downloadUrl: string | null = null;
+    // Get all files for this product
+    const { data: files } = await supabaseAdmin
+      .from("product_files")
+      .select("id, file_name, storage_path, file_size")
+      .eq("product_id", product.id)
+      .order("created_at", { ascending: true });
 
-    if (product.storage_path) {
-      const { data: signed, error: signError } = await supabaseAdmin.storage
-        .from(FILE_BUCKET)
-        .createSignedUrl(product.storage_path, 300);
+    const downloadUrls: { fileName: string; url: string }[] = [];
 
-      if (signError || !signed) {
-        return NextResponse.json({ error: "Could not generate download link." }, { status: 500 });
+    if (files && files.length > 0) {
+      for (const file of files) {
+        const { data: signed, error: signError } = await supabaseAdmin.storage
+          .from(FILE_BUCKET)
+          .createSignedUrl(file.storage_path, 300);
+
+        if (!signError && signed) {
+          downloadUrls.push({ fileName: file.file_name, url: signed.signedUrl });
+        }
       }
-      downloadUrl = signed.signedUrl;
-    } else if (product.download_url) {
-      downloadUrl = product.download_url;
-    } else {
-      return NextResponse.json({ error: "No file configured." }, { status: 500 });
     }
 
-    return NextResponse.json({ downloadUrl });
+    // Fallback: check for old single-file storage_path or download_url on product
+    if (downloadUrls.length === 0) {
+      const { data: prod } = await supabaseAdmin
+        .from("products")
+        .select("download_url, storage_path")
+        .eq("id", product.id)
+        .single();
+
+      if (prod?.storage_path) {
+        const { data: signed, error: signError } = await supabaseAdmin.storage
+          .from(FILE_BUCKET)
+          .createSignedUrl(prod.storage_path, 300);
+        if (!signError && signed) {
+          downloadUrls.push({ fileName: "download", url: signed.signedUrl });
+        }
+      } else if (prod?.download_url) {
+        downloadUrls.push({ fileName: "download", url: prod.download_url });
+      }
+    }
+
+    if (downloadUrls.length === 0) {
+      return NextResponse.json({ error: "No files configured for this product." }, { status: 500 });
+    }
+
+    return NextResponse.json({ downloadUrls });
   } catch (err: any) {
     console.error("redeem route error:", err);
     return NextResponse.json({ error: "Something went wrong." }, { status: 500 });
