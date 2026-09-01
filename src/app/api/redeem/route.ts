@@ -64,8 +64,11 @@ export async function POST(req: NextRequest) {
     if (files && files.length > 0) {
       for (const file of files) {
         const { data: signed, error: signError } = await supabaseAdmin.storage
-          .from(FILE_BUCKET)
-          .createSignedUrl(file.storage_path, 300);
+  .from(FILE_BUCKET)
+  .createSignedUrl(file.storage_path, 300, {
+    download: file.file_name,
+  });
+
 
         if (!signError && signed) {
           downloadUrls.push({ fileName: file.file_name, url: signed.signedUrl });
@@ -83,8 +86,12 @@ export async function POST(req: NextRequest) {
 
       if (prod?.storage_path) {
         const { data: signed, error: signError } = await supabaseAdmin.storage
-          .from(FILE_BUCKET)
-          .createSignedUrl(prod.storage_path, 300);
+  .from(FILE_BUCKET)
+  .createSignedUrl(prod.storage_path, 300, {
+    download: "download",
+  });
+
+
         if (!signError && signed) {
           downloadUrls.push({ fileName: "download", url: signed.signedUrl });
         }
