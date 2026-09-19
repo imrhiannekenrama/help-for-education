@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -37,6 +37,7 @@ interface Product {
   is_active: boolean;
   features: string[];
   bonuses: string[];
+  category: string;
 }
 
 export default function AdminProducts() {
@@ -53,7 +54,7 @@ export default function AdminProducts() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [form, setForm] = useState({
-    name: "", description: "", price: "", image: "", file_size: "", download_url: "", features: "", bonuses: "",
+    name: "", description: "", price: "", image: "", file_size: "", download_url: "", features: "", bonuses: "", category: "resource",
   });
 
   useEffect(() => {
@@ -81,7 +82,7 @@ export default function AdminProducts() {
     setExistingFiles([]);
     setImageFile(null);
     setImagePreview("");
-    setForm({ name: "", description: "", price: "", image: "", file_size: "", download_url: "", features: "", bonuses: "" });
+    setForm({ name: "", description: "", price: "", image: "", file_size: "", download_url: "", features: "", bonuses: "", category: "resource" });
     setOpen(true);
   }
 
@@ -93,7 +94,7 @@ export default function AdminProducts() {
     setForm({
       name: p.name, description: p.description, price: String(p.price), image: p.image || "",
       file_size: p.file_size || "", download_url: p.download_url || "",
-      features: (p.features || []).join(", "), bonuses: (p.bonuses || []).join(", "),
+      features: (p.features || []).join(", "), bonuses: (p.bonuses || []).join(", "), category: p.category || "resource",
     });
     const { data: files } = await supabase
       .from("product_files")
@@ -171,7 +172,7 @@ export default function AdminProducts() {
         download_url: downloadUrl, storage_path: storagePath,
         features: form.features ? form.features.split(",").map((s) => s.trim()).filter(Boolean) : [],
         bonuses: form.bonuses ? form.bonuses.split(",").map((s) => s.trim()).filter(Boolean) : [],
-        is_active: true,
+        is_active: true, category: form.category,
       };
 
       let productId: string;
@@ -273,14 +274,14 @@ export default function AdminProducts() {
                       <span className="font-medium text-gray-900 dark:text-white">{p.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell>₱{p.price}</TableCell>
+                  <TableCell>â‚±{p.price}</TableCell>
                   <TableCell className="max-w-[200px] truncate text-xs text-gray-500">
                     {p.storage_path || p.download_url ? (
                       p.storage_path ? (
                         <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                           <FileIcon className="h-3 w-3" /> Uploaded file
                         </span>
-                      ) : (p.download_url || "—")
+                      ) : (p.download_url || "â€”")
                     ) : (
                       <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">
                         <FileIcon className="h-3 w-3" /> Multiple files
@@ -308,11 +309,18 @@ export default function AdminProducts() {
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-4 py-4">
             <div>
+              <Label htmlFor="category">Type</Label>
+              <select id="category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+                <option value="resource">Teaching Resource</option>
+                <option value="app">Software / App</option>
+              </select>
+            </div>
+            <div>
               <Label htmlFor="name">Product Name</Label>
               <Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1.5" placeholder="Teacher Ultimate Bundle" required />
             </div>
             <div>
-              <Label htmlFor="price">Price (₱)</Label>
+              <Label htmlFor="price">Price (â‚±)</Label>
               <Input id="price" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="mt-1.5" placeholder="99" required />
             </div>
             <div>
@@ -367,7 +375,7 @@ export default function AdminProducts() {
                     className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-blue-700 dark:text-gray-300"
                   />
                   <p className="text-xs text-gray-400">
-                    Upload multiple files (max 50MB each). Split large products into parts — the buyer gets all files at once.
+                    Upload multiple files (max 50MB each). Split large products into parts â€” the buyer gets all files at once.
                   </p>
 
                   {existingFiles.length > 0 && (
@@ -432,3 +440,4 @@ export default function AdminProducts() {
     </AdminLayout>
   );
 }
+

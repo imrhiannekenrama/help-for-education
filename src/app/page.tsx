@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -33,6 +33,7 @@ export default function HomePage() {
         .from("products")
         .select("id, name, slug, description, price, image, features")
         .eq("is_active", true)
+        .eq("category", "resource")
         .order("created_at", { ascending: false });
       setProducts(data || []);
       setLoading(false);
@@ -114,7 +115,7 @@ export default function HomePage() {
                         ) : (
                           <div className="flex h-full w-full items-center justify-center"><Package className="h-12 w-12 text-gray-400" /></div>
                         )}
-                        <Badge className="absolute top-3 right-3">₱{product.price}</Badge>
+                        <Badge className="absolute top-3 right-3">â‚±{product.price}</Badge>
                       </div>
                       <div className="p-5">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{product.name}</h3>
@@ -149,3 +150,4 @@ export default function HomePage() {
     </>
   );
 }
+

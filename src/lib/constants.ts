@@ -1,4 +1,4 @@
-// App-wide constants for Help for Education
+﻿// App-wide constants for Help for Education
 
 export const SITE_NAME = "Help for Education";
 export const TAGLINE = "Premium Digital Resources for Educators";
@@ -9,6 +9,7 @@ export const CONTACT_EMAIL = "support@helpforeducation.org";
 export const NAV_LINKS = [
   { label: "Home", href: "/" },
   { label: "Products", href: "/#products" },
+  { label: "Apps", href: "/apps" },
   { label: "How It Works", href: "/#how-it-works" },
   { label: "FAQ", href: "/#faq" },
 ];
@@ -60,6 +61,7 @@ export const FAQS = [
   },
   {
     question: "Can I download again after using my code?",
-    answer: "Yes! Your code unlocks the download link. Save the link we show you — you can re-download from it anytime.",
+    answer: "Yes! Your code unlocks the download link. Save the link we show you â€” you can re-download from it anytime.",
   },
 ];
+
