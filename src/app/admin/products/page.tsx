@@ -325,6 +325,10 @@ export default function AdminProducts() {
                 <option value="app">Software / App</option>
               </select>
             </div>
+            <div className="flex items-center gap-2">
+              <input id="is-license" type="checkbox" checked={form.is_license} onChange={(e) => setForm({ ...form, is_license: e.target.checked })} className="h-4 w-4 rounded border-gray-300 text-blue-600" />
+              <Label htmlFor="is-license" className="text-sm font-normal text-gray-500">Delivers a license key (buyer receives a key, no files)</Label>
+            </div>
             <div>
               <Label htmlFor="name">Product Name</Label>
               <Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1.5" placeholder="Teacher Ultimate Bundle" required />
@@ -450,6 +454,7 @@ export default function AdminProducts() {
     </AdminLayout>
   );
 }
+
 
 
 
