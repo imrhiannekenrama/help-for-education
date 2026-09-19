@@ -206,7 +206,15 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-      </main>
+
+        <section className="pb-16 pt-4">
+          <div className="mx-auto max-w-3xl px-4 text-center lg:px-8">
+            <p className="text-sm text-gray-400">
+              By using this site and purchasing our products, you agree to our{" "}
+              <Link href="/terms" className="font-medium text-blue-600 underline dark:text-blue-400">Terms of Service</Link>.
+            </p>
+          </div>
+        </section>      </main>
       <Footer />
     </>
   );
