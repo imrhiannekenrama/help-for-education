@@ -30,6 +30,7 @@ export const FOOTER_LINKS = {
 };
 
 export const ADMIN_NAV = [
+  { label: "License Keys", href: "/admin/licenses", icon: "Key" },
   { label: "Dashboard", href: "/admin", icon: "LayoutDashboard" },
   { label: "Products", href: "/admin/products", icon: "Package" },
   { label: "Codes", href: "/admin/codes", icon: "Key" },
@@ -64,4 +65,5 @@ export const FAQS = [
     answer: "Yes! Your code unlocks the download link. Save the link we show you â€” you can re-download from it anytime.",
   },
 ];
+
 

@@ -28,7 +28,7 @@ export default function AppsPage() {
     async function fetchApps() {
       const { data } = await supabase
         .from("products")
-        .select("id, name, slug, description, price, image")
+        .select("id, name, slug, description, price, image, download_count")
         .eq("is_active", true)
         .eq("category", "app")
         .order("created_at", { ascending: false });
@@ -78,6 +78,7 @@ export default function AppsPage() {
                     </div>
                   </div>
                   <p className="mt-4 flex-1 text-sm text-gray-500 line-clamp-3">{app.description}</p>
+                  <p className="mt-2 text-xs text-gray-400">{(app.download_count || 0).toLocaleString()} installs</p>
                   <Link href={`/product/${app.slug}`} className="mt-5">
                     <Button className="w-full"><Download className="mr-2 h-4 w-4" /> Install</Button>
                   </Link>
@@ -99,3 +100,4 @@ export default function AppsPage() {
     </>
   );
 }
+

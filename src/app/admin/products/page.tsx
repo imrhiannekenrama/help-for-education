@@ -38,6 +38,8 @@ interface Product {
   features: string[];
   bonuses: string[];
   category: string;
+  is_license: boolean;
+  download_count: number;
 }
 
 export default function AdminProducts() {
@@ -55,7 +57,7 @@ export default function AdminProducts() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [form, setForm] = useState({
-    name: "", description: "", price: "", image: "", file_size: "", download_url: "", features: "", bonuses: "", category: "resource",
+    name: "", description: "", price: "", image: "", file_size: "", download_url: "", features: "", bonuses: "", category: "resource", is_license: false,
   });
 
   useEffect(() => {
@@ -83,7 +85,7 @@ export default function AdminProducts() {
     setExistingFiles([]);
     setImageFile(null);
     setImagePreview("");
-    setForm({ name: "", description: "", price: "", image: "", file_size: "", download_url: "", features: "", bonuses: "", category: "resource" });
+    setForm({ name: "", description: "", price: "", image: "", file_size: "", download_url: "", features: "", bonuses: "", category: "resource", is_license: false });
     setOpen(true);
   }
 
@@ -95,7 +97,7 @@ export default function AdminProducts() {
     setForm({
       name: p.name, description: p.description, price: String(p.price), image: p.image || "",
       file_size: p.file_size || "", download_url: p.download_url || "",
-      features: (p.features || []).join(", "), bonuses: (p.bonuses || []).join(", "), category: p.category || "resource",
+      features: (p.features || []).join(", "), bonuses: (p.bonuses || []).join(", "), category: p.category || "resource", is_license: p.is_license || false,
     });
     const { data: files } = await supabase
       .from("product_files")
@@ -173,7 +175,7 @@ export default function AdminProducts() {
         download_url: downloadUrl, storage_path: storagePath,
         features: form.features ? form.features.split(",").map((s) => s.trim()).filter(Boolean) : [],
         bonuses: form.bonuses ? form.bonuses.split(",").map((s) => s.trim()).filter(Boolean) : [],
-        is_active: true, category: form.category,
+        is_active: true, category: form.category, is_license: form.is_license,
       };
 
       let productId: string;
@@ -258,6 +260,7 @@ export default function AdminProducts() {
               <TableRow>
                 <TableHead>Product</TableHead>
                 <TableHead>Price</TableHead>
+                <TableHead>Downloads</TableHead>
                 <TableHead>Files</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
@@ -281,6 +284,7 @@ export default function AdminProducts() {
                     </div>
                   </TableCell>
                   <TableCell>â‚±{p.price}</TableCell>
+                  <TableCell>{p.download_count || 0}</TableCell>
                   <TableCell className="max-w-[200px] truncate text-xs text-gray-500">
                     {p.storage_path || p.download_url ? (
                       p.storage_path ? (
@@ -446,5 +450,7 @@ export default function AdminProducts() {
     </AdminLayout>
   );
 }
+
+
 
 

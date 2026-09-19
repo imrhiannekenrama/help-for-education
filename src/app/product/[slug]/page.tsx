@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Package, ArrowLeft, Download, KeyRound, Check, ShieldCheck, FileArchive, MessageCircle } from "lucide-react";
+import { Package, ArrowLeft, Download, KeyRound, Check, ShieldCheck, FileArchive, MessageCircle, Copy } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Navbar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
@@ -27,6 +27,7 @@ interface Product {
   features: string[];
   bonuses: string[];
   file_size: string;
+  is_license: boolean;
 }
 
 export default function ProductPage() {
@@ -38,12 +39,14 @@ export default function ProductPage() {
   const [code, setCode] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [downloadUrls, setDownloadUrls] = useState<{ fileName: string; url: string }[] | null>(null);
+  const [licenseKey, setLicenseKey] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function fetchProduct() {
       const { data } = await supabase
         .from("products")
-        .select("id, name, slug, description, long_description, price, image, features, bonuses, file_size")
+        .select("id, name, slug, description, long_description, price, image, features, bonuses, file_size, is_license")
         .eq("slug", slug)
         .eq("is_active", true)
         .single();
@@ -53,12 +56,22 @@ export default function ProductPage() {
     fetchProduct();
   }, [slug]);
 
+  async function copyKey() {
+    if (!licenseKey) return;
+    try {
+      await navigator.clipboard.writeText(licenseKey);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  }
+
   const handleDownload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!code.trim() || !product) return;
 
     setVerifying(true);
     setDownloadUrls(null);
+    setLicenseKey(null);
 
     try {
       const res = await fetch("/api/redeem", {
@@ -68,7 +81,7 @@ export default function ProductPage() {
       });
       const result = await res.json();
 
-      if (!res.ok || !result.downloadUrls) {
+      if (!res.ok || (!result.downloadUrls && !result.licenseKey)) {
         toast({
           title: "Invalid Code",
           description: result.error || "This code is invalid or already used.",
@@ -78,8 +91,13 @@ export default function ProductPage() {
         return;
       }
 
-      setDownloadUrls(result.downloadUrls);
-      toast({ title: "Code Verified!", description: "Your downloads are ready below." });
+      if (result.licenseKey) {
+        setLicenseKey(result.licenseKey);
+        toast({ title: "License Key Ready!", description: "Your license key is shown below." });
+      } else {
+        setDownloadUrls(result.downloadUrls);
+        toast({ title: "Code Verified!", description: "Your downloads are ready below." });
+      }
     } catch {
       toast({ title: "Error", description: "Something went wrong. Try again.", variant: "destructive" });
     }
@@ -136,7 +154,12 @@ export default function ProductPage() {
                   {product.long_description && (
                     <p className="mt-4 text-sm text-gray-600 dark:text-gray-300">{product.long_description}</p>
                   )}
-                  {product.file_size && (
+                  {product.is_license && (
+                    <div className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+                      <KeyRound className="h-3.5 w-3.5" /> License key delivered instantly after redemption
+                    </div>
+                  )}
+                  {product.file_size && !product.is_license && (
                     <div className="mt-4 flex items-center gap-2 text-xs text-gray-400">
                       <FileArchive className="h-4 w-4" /> File size: {product.file_size}
                     </div>
@@ -146,7 +169,7 @@ export default function ProductPage() {
 
               {product.features.length > 0 && (
                 <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">What's Included</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">What is Included</h3>
                   <ul className="mt-3 space-y-2">
                     {product.features.map((f, i) => (
                       <li key={i} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
@@ -172,39 +195,52 @@ export default function ProductPage() {
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="lg:sticky lg:top-28 lg:self-start">
               <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-                {!downloadUrls ? (
+                {!licenseKey && !downloadUrls ? (
                   <>
                     <div className="flex items-center gap-3">
                       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-emerald-500 text-white">
                         <KeyRound className="h-6 w-6" />
                       </div>
                       <div>
-                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Enter Download Code</h2>
-                        <p className="text-xs text-gray-500">Enter the code you received after payment.</p>
+                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{product.is_license ? "Enter Purchase Code" : "Enter Download Code"}</h2>
+                        <p className="text-xs text-gray-500">{product.is_license ? "Enter the code you received after payment to get your license key." : "Enter the code you received after payment."}</p>
                       </div>
                     </div>
 
                     <form onSubmit={handleDownload} className="mt-6 space-y-4">
                       <div>
-                        <Label htmlFor="code">Download Code</Label>
+                        <Label htmlFor="code">{product.is_license ? "Purchase Code" : "Download Code"}</Label>
                         <Input id="code" value={code} onChange={(e) => setCode(e.target.value)} className="mt-1.5 font-mono uppercase" placeholder="H4E-XXXX-XXXX-XXXX" required disabled={verifying} />
                       </div>
                       <Button type="submit" className="w-full" disabled={verifying || !code.trim()}>
-                        {verifying ? <><Spinner className="mr-2" /> Verifying...</> : <><Download className="mr-2 h-4 w-4" /> Verify & Download</>}
+                        {verifying ? <><Spinner className="mr-2" /> Verifying...</> : product.is_license ? <><KeyRound className="mr-2 h-4 w-4" /> Get License Key</> : <><Download className="mr-2 h-4 w-4" /> Verify & Download</>}
                       </Button>
                     </form>
 
                     <div className="mt-6 rounded-xl bg-blue-50 dark:bg-blue-950/30 p-4">
                       <p className="text-sm text-blue-700 dark:text-blue-300">
                         <ShieldCheck className="mr-1 inline h-4 w-4" />
-                        Don't have a code yet?
+                        Don&apos;t have a code yet?
                       </p>
-                      <p className="mt-1 text-xs text-gray-500">Message us on Messenger to order and get your unique download code.</p>
+                      <p className="mt-1 text-xs text-gray-500">Message us on Messenger to order and get your unique code.</p>
                       <a href={FACEBOOK_PAGE} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400">
                         <MessageCircle className="h-4 w-4" /> Visit our Facebook Page
                       </a>
                     </div>
                   </>
+                ) : licenseKey ? (
+                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+                      <Check className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <h2 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">License Key Ready!</h2>
+                    <p className="mt-2 text-sm text-gray-500">Enter this key in Class House Manager to activate your subscription.</p>
+                    <div className="mt-6 rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/30">
+                      <code className="block break-all text-center font-mono text-lg font-bold text-emerald-700 dark:text-emerald-300">{licenseKey}</code>
+                    </div>
+                    <Button onClick={copyKey} className="mt-4 w-full"><Copy className="mr-2 h-4 w-4" /> {copied ? "Copied!" : "Copy License Key"}</Button>
+                    <p className="mt-4 text-xs text-gray-400"><ShieldCheck className="inline h-3 w-3" /> Your purchase code has been used. Keep this license key safe.</p>
+                  </motion.div>
                 ) : (
                   <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
                     <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
@@ -212,19 +248,17 @@ export default function ProductPage() {
                     </div>
                     <h2 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">Code Verified!</h2>
                     <p className="mt-2 text-sm text-gray-500">
-                      {downloadUrls.length > 1 ? "Your downloads are ready. Click each file below." : "Your download is ready. Click below to get your file."}
+                      {downloadUrls && downloadUrls.length > 1 ? "Your downloads are ready. Click each file below." : "Your download is ready. Click below to get your file."}
                     </p>
                     <div className="mt-6 space-y-3">
-                      {downloadUrls.map((file, i) => (
+                      {downloadUrls && downloadUrls.map((file, i) => (
                         <a key={i} href={file.url} target="_blank" rel="noopener noreferrer" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-500 px-6 py-3 font-medium text-white hover:opacity-90 transition-opacity">
                           <Download className="h-5 w-5" />
                           {downloadUrls.length > 1 ? `Download ${file.fileName}` : "Download Now"}
                         </a>
                       ))}
                     </div>
-                    <p className="mt-4 text-xs text-gray-400">
-                      <ShieldCheck className="inline h-3 w-3" /> Your code has been used and cannot be reused. Download links expire in 5 minutes.
-                    </p>
+                    <p className="mt-4 text-xs text-gray-400"><ShieldCheck className="inline h-3 w-3" /> Your code has been used and cannot be reused. Download links expire in 5 minutes.</p>
                   </motion.div>
                 )}
               </div>
