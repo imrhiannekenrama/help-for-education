@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Package, ArrowRight, Sparkles, Download, KeyRound, MessageCircle } from "lucide-react";
+import { Package, ArrowRight, Sparkles, Download, KeyRound, MessageCircle, ChevronDown } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Navbar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
@@ -27,6 +27,7 @@ export default function HomePage() {
   const [apps, setApps] = useState<Product[]>([]);
   const [resources, setResources] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openFaq, setOpenFaq] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchProducts() {
@@ -185,11 +186,21 @@ export default function HomePage() {
         <section id="faq" className="py-20 bg-gray-50 dark:bg-gray-900/50">
           <div className="mx-auto max-w-3xl px-4 lg:px-8">
             <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white">Frequently Asked Questions</h2>
+            <p className="mt-3 text-center text-gray-500">Click a question to reveal the answer.</p>
             <div className="mt-10 space-y-4">
               {FAQS.map((faq) => (
-                <div key={faq.question} className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">{faq.question}</h3>
-                  <p className="mt-2 text-sm text-gray-500">{faq.answer}</p>
+                <div key={faq.question} className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaq(openFaq === faq.question ? null : faq.question)}
+                    className="flex w-full items-center justify-between gap-4 p-6 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  >
+                    <span className="font-semibold text-gray-900 dark:text-white">{faq.question}</span>
+                    <ChevronDown className={"h-5 w-5 shrink-0 text-gray-400 transition-transform duration-200 " + (openFaq === faq.question ? "rotate-180" : "")} />
+                  </button>
+                  {openFaq === faq.question && (
+                    <p className="px-6 pb-6 text-sm text-gray-500">{faq.answer}</p>
+                  )}
                 </div>
               ))}
             </div>
