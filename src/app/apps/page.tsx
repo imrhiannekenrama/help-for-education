@@ -17,6 +17,7 @@ interface App {
   slug: string;
   description: string;
   price: number;
+  download_count: number;
   image: string;
 }
 
@@ -100,4 +101,6 @@ export default function AppsPage() {
     </>
   );
 }
+
+
 
