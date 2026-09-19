@@ -64,6 +64,7 @@ export default function TermsPage() {
 
           <div className="mt-12">
             <Link href="/"><Button variant="outline">Back to Home</Button></Link>
+            <Link href="/privacy"><Button variant="outline">Privacy Policy</Button></Link>
           </div>
         </div>
       </main>
