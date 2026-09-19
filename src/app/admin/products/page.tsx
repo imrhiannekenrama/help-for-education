@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -146,14 +146,14 @@ export default function AdminProducts() {
       let imageUrl = form.image;
 
       if (uploadMode === "file") {
-        if (selectedFiles.length === 0 && existingFiles.length === 0) {
+        if (selectedFiles.length === 0 && existingFiles.length === 0 && !form.is_license) {
           throw new Error("Please upload at least one file.");
         }
         downloadUrl = null;
         storagePath = null;
       } else {
-        if (!form.download_url.trim()) throw new Error("Please enter a download link.");
-        downloadUrl = form.download_url.trim();
+        if (!form.download_url.trim() && !form.is_license) throw new Error("Please enter a download link.");
+        downloadUrl = form.download_url.trim() || null;
         storagePath = null;
       }
 
@@ -454,7 +454,6 @@ export default function AdminProducts() {
     </AdminLayout>
   );
 }
-
 
 
 
