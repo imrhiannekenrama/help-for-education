@@ -147,7 +147,7 @@ export default function ProductPage() {
                   ) : (
                     <div className="flex h-full w-full items-center justify-center"><Package className="h-16 w-16 text-gray-400" /></div>
                   )}
-                  <Badge className="absolute top-4 right-4 text-base">â‚±{product.price}</Badge>
+                  <Badge className="absolute top-4 right-4 text-base">₱{product.price}</Badge>
                 </div>
                 <div className="p-6">
                   <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{product.name}</h1>

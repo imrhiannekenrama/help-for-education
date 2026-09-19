@@ -283,7 +283,7 @@ export default function AdminProducts() {
                       <span className="font-medium text-gray-900 dark:text-white">{p.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell>Ã¢â€šÂ±{p.price}</TableCell>
+                  <TableCell>₱{p.price}</TableCell>
                   <TableCell>{p.download_count || 0}</TableCell>
                   <TableCell className="max-w-[200px] truncate text-xs text-gray-500">
                     {p.storage_path || p.download_url ? (
