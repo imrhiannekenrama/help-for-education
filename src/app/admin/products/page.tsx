@@ -44,6 +44,7 @@ export default function AdminProducts() {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | "resource" | "app">("all");
   const [products, setProducts] = useState<Product[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
@@ -246,6 +247,11 @@ export default function AdminProducts() {
           <Button onClick={openAdd}><Plus className="mr-2 h-4 w-4" /> Add Product</Button>
         </div>
 
+                <div className="mt-4 flex gap-2">
+          <button onClick={() => setFilter("all")} className={`rounded-xl border px-4 py-1.5 text-sm font-medium transition-colors ${filter === "all" ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300" : "border-gray-200 text-gray-500 dark:border-gray-700"}`}>All</button>
+          <button onClick={() => setFilter("resource")} className={`rounded-xl border px-4 py-1.5 text-sm font-medium transition-colors ${filter === "resource" ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300" : "border-gray-200 text-gray-500 dark:border-gray-700"}`}>Teaching Resources</button>
+          <button onClick={() => setFilter("app")} className={`rounded-xl border px-4 py-1.5 text-sm font-medium transition-colors ${filter === "app" ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300" : "border-gray-200 text-gray-500 dark:border-gray-700"}`}>Apps</button>
+        </div>
         <div className="mt-6 rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 overflow-hidden">
           <Table>
             <TableHeader>
@@ -258,9 +264,9 @@ export default function AdminProducts() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.length === 0 ? (
+              {products.filter((p) => filter === "all" || p.category === filter).length === 0 ? (
                 <TableRow><TableCell colSpan={5} className="text-center text-gray-400 py-8">No products yet. Click "Add Product" to create one.</TableCell></TableRow>
-              ) : products.map((p) => (
+              ) : products.filter((p) => filter === "all" || p.category === filter).map((p) => (
                 <TableRow key={p.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -440,4 +446,5 @@ export default function AdminProducts() {
     </AdminLayout>
   );
 }
+
 
