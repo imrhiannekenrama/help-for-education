@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
@@ -28,6 +28,7 @@ interface Product {
   bonuses: string[];
   file_size: string;
   is_license: boolean;
+  category: string;
 }
 
 export default function ProductPage() {
@@ -202,7 +203,7 @@ export default function ProductPage() {
                         <KeyRound className="h-6 w-6" />
                       </div>
                       <div>
-                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{product.is_license ? "Enter Purchase Code" : "Enter Download Code"}</h2>
+                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{product.category === "app" ? "Enter Code to Install" : product.is_license ? "Enter Purchase Code" : "Enter Download Code"}</h2>
                         <p className="text-xs text-gray-500">{product.is_license ? "Enter the code you received after payment to get your license key." : "Enter the code you received after payment."}</p>
                       </div>
                     </div>
@@ -213,7 +214,7 @@ export default function ProductPage() {
                         <Input id="code" value={code} onChange={(e) => setCode(e.target.value)} className="mt-1.5 font-mono uppercase" placeholder="H4E-XXXX-XXXX-XXXX" required disabled={verifying} />
                       </div>
                       <Button type="submit" className="w-full" disabled={verifying || !code.trim()}>
-                        {verifying ? <><Spinner className="mr-2" /> Verifying...</> : product.is_license ? <><KeyRound className="mr-2 h-4 w-4" /> Get License Key</> : <><Download className="mr-2 h-4 w-4" /> Verify & Download</>}
+                        {verifying ? <><Spinner className="mr-2" /> Verifying...</> : product.category === "app" ? <><Download className="mr-2 h-4 w-4" /> Install</> : product.is_license ? <><KeyRound className="mr-2 h-4 w-4" /> Get License Key</> : <><Download className="mr-2 h-4 w-4" /> Verify & Download</>}
                       </Button>
                     </form>
 
@@ -254,7 +255,7 @@ export default function ProductPage() {
                       {downloadUrls && downloadUrls.map((file, i) => (
                         <a key={i} href={file.url} target="_blank" rel="noopener noreferrer" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-500 px-6 py-3 font-medium text-white hover:opacity-90 transition-opacity">
                           <Download className="h-5 w-5" />
-                          {downloadUrls.length > 1 ? `Download ${file.fileName}` : "Download Now"}
+                          {downloadUrls.length > 1 ? `Download ${file.fileName}` : product.category === "app" ? "Install Now" : "Download Now"}
                         </a>
                       ))}
                     </div>
