@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 const FILE_BUCKET = "product-files";
@@ -14,7 +14,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing code or product." }, { status: 400 });
     }
 
-    // 1. Look up the product (server-side only).
     const { data: product, error: productError } = await supabaseAdmin
       .from("products")
       .select("id, is_license, download_url, storage_path")
@@ -26,7 +25,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Product not found." }, { status: 404 });
     }
 
-    // 2. Look up the code.
     const { data: codeRecord, error: codeError } = await supabaseAdmin
       .from("codes")
       .select("id, status, product_id")
@@ -43,7 +41,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "This code is not valid for this product." }, { status: 400 });
     }
 
-    // 3. Atomically mark the code as used.
     const { data: updated, error: updateError } = await supabaseAdmin
       .from("codes")
       .update({ status: "used", used_at: new Date().toISOString() })
@@ -56,20 +53,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Could not verify code - it may have just been used." }, { status: 400 });
     }
 
-    // 4. Track installs/downloads.
     const { error: countError } = await supabaseAdmin.rpc("increment_download_count", { pid: product.id });
     if (countError) console.warn("count error:", countError["message"]);
 
-    // 5. License key product: claim one unused key from the pool.
+    // Resolve a license key, if this product delivers one.
+    let licenseKey: string | null = null;
     if (product.is_license) {
-      const { data: licenseKey, error: licError } = await supabaseAdmin.rpc("claim_license_key", { pid: product.id });
-      if (licError || !licenseKey) {
+      const { data: claimedKey, error: licError } = await supabaseAdmin.rpc("claim_license_key", { pid: product.id });
+      if (licError || !claimedKey) {
         return NextResponse.json({ error: "License keys are currently out of stock. Please contact support." }, { status: 500 });
       }
-      return NextResponse.json({ licenseKey });
+      licenseKey = claimedKey;
     }
 
-    // 6. Regular product: resolve download links.
+    // Resolve any downloadable files, independent of the license key.
+    const downloadUrls: { fileName: string; url: string }[] = [];
+
     const { data: files } = await supabaseAdmin
       .from("product_files")
       .select("file_name, storage_path")
@@ -77,7 +76,6 @@ export async function POST(req: NextRequest) {
       .order("created_at", { ascending: true });
 
     if (files && files.length > 0) {
-      const downloadUrls: { fileName: string; url: string }[] = [];
       for (const file of files) {
         const { data: signed, error: signError } = await supabaseAdmin.storage
           .from(FILE_BUCKET)
@@ -87,24 +85,26 @@ export async function POST(req: NextRequest) {
         }
         downloadUrls.push({ fileName: file.file_name, url: signed.signedUrl });
       }
-      return NextResponse.json({ downloadUrls });
-    }
-
-    if (product.storage_path) {
+    } else if (product.storage_path) {
       const { data: signed, error: signError } = await supabaseAdmin.storage
         .from(FILE_BUCKET)
         .createSignedUrl(product.storage_path, SIGNED_URL_EXPIRY_SECONDS, { download: "download" });
       if (signError || !signed) {
         return NextResponse.json({ error: "Could not generate download link." }, { status: 500 });
       }
-      return NextResponse.json({ downloadUrls: [{ fileName: "download", url: signed.signedUrl }] });
+      downloadUrls.push({ fileName: "download", url: signed.signedUrl });
+    } else if (product.download_url) {
+      downloadUrls.push({ fileName: "download", url: product.download_url });
     }
 
-    if (product.download_url) {
-      return NextResponse.json({ downloadUrls: [{ fileName: "download", url: product.download_url }] });
+    if (!licenseKey && downloadUrls.length === 0) {
+      return NextResponse.json({ error: "This product has no file or license key configured." }, { status: 500 });
     }
 
-    return NextResponse.json({ error: "This product has no file configured." }, { status: 500 });
+    return NextResponse.json({
+      licenseKey: licenseKey || undefined,
+      downloadUrls: downloadUrls.length > 0 ? downloadUrls : undefined,
+    });
   } catch (err: any) {
     console.error("redeem route error:", err);
     return NextResponse.json({ error: "Something went wrong. Try again." }, { status: 500 });

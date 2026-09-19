@@ -92,13 +92,13 @@ export default function ProductPage() {
         return;
       }
 
-      if (result.licenseKey) {
-        setLicenseKey(result.licenseKey);
-        toast({ title: "License Key Ready!", description: "Your license key is shown below." });
-      } else {
-        setDownloadUrls(result.downloadUrls);
-        toast({ title: "Code Verified!", description: "Your downloads are ready below." });
-      }
+      if (result.licenseKey) setLicenseKey(result.licenseKey);
+      if (result.downloadUrls) setDownloadUrls(result.downloadUrls);
+
+      toast({
+        title: result.licenseKey && result.downloadUrls ? "Ready to Install!" : result.licenseKey ? "License Key Ready!" : "Code Verified!",
+        description: "See your details below.",
+      });
     } catch {
       toast({ title: "Error", description: "Something went wrong. Try again.", variant: "destructive" });
     }
@@ -147,7 +147,7 @@ export default function ProductPage() {
                   ) : (
                     <div className="flex h-full w-full items-center justify-center"><Package className="h-16 w-16 text-gray-400" /></div>
                   )}
-                  <Badge className="absolute top-4 right-4 text-base">â‚±{product.price}</Badge>
+                  <Badge className="absolute top-4 right-4 text-base">₱{product.price}</Badge>
                 </div>
                 <div className="p-6">
                   <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{product.name}</h1>
@@ -204,7 +204,7 @@ export default function ProductPage() {
                       </div>
                       <div>
                         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{product.category === "app" ? "Enter Code to Install" : product.is_license ? "Enter Purchase Code" : "Enter Download Code"}</h2>
-                        <p className="text-xs text-gray-500">{product.is_license ? "Enter the code you received after payment to get your license key." : "Enter the code you received after payment."}</p>
+                        <p className="text-xs text-gray-500">{product.category === "app" ? "Enter the code you received after payment to install." : product.is_license ? "Enter the code you received after payment to get your license key." : "Enter the code you received after payment."}</p>
                       </div>
                     </div>
 
@@ -229,38 +229,44 @@ export default function ProductPage() {
                       </a>
                     </div>
                   </>
-                ) : licenseKey ? (
-                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-                      <Check className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <h2 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">License Key Ready!</h2>
-                    <p className="mt-2 text-sm text-gray-500">Enter this key in Class House Manager to activate your subscription.</p>
-                    <div className="mt-6 rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/30">
-                      <code className="block break-all text-center font-mono text-lg font-bold text-emerald-700 dark:text-emerald-300">{licenseKey}</code>
-                    </div>
-                    <Button onClick={copyKey} className="mt-4 w-full"><Copy className="mr-2 h-4 w-4" /> {copied ? "Copied!" : "Copy License Key"}</Button>
-                    <p className="mt-4 text-xs text-gray-400"><ShieldCheck className="inline h-3 w-3" /> Your purchase code has been used. Keep this license key safe.</p>
-                  </motion.div>
                 ) : (
-                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-                      <Check className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <h2 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">Code Verified!</h2>
-                    <p className="mt-2 text-sm text-gray-500">
-                      {downloadUrls && downloadUrls.length > 1 ? "Your downloads are ready. Click each file below." : "Your download is ready. Click below to get your file."}
-                    </p>
-                    <div className="mt-6 space-y-3">
-                      {downloadUrls && downloadUrls.map((file, i) => (
-                        <a key={i} href={file.url} target="_blank" rel="noopener noreferrer" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-500 px-6 py-3 font-medium text-white hover:opacity-90 transition-opacity">
-                          <Download className="h-5 w-5" />
-                          {downloadUrls.length > 1 ? `Download ${file.fileName}` : product.category === "app" ? "Install Now" : "Download Now"}
-                        </a>
-                      ))}
-                    </div>
-                    <p className="mt-4 text-xs text-gray-400"><ShieldCheck className="inline h-3 w-3" /> Your code has been used and cannot be reused. Download links expire in 5 minutes.</p>
-                  </motion.div>
+                  <div className="space-y-6">
+                    {downloadUrls && (
+                      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+                          <Check className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <h2 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">Code Verified!</h2>
+                        <p className="mt-2 text-sm text-gray-500">
+                          {downloadUrls.length > 1 ? "Your downloads are ready. Click each file below." : "Your download is ready. Click below to get your file."}
+                        </p>
+                        <div className="mt-6 space-y-3">
+                          {downloadUrls.map((file, i) => (
+                            <a key={i} href={file.url} target="_blank" rel="noopener noreferrer" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-500 px-6 py-3 font-medium text-white hover:opacity-90 transition-opacity">
+                              <Download className="h-5 w-5" />
+                              {downloadUrls.length > 1 ? `Download ${file.fileName}` : product.category === "app" ? "Install Now" : "Download Now"}
+                            </a>
+                          ))}
+                        </div>
+                        <p className="mt-4 text-xs text-gray-400"><ShieldCheck className="inline h-3 w-3" /> Your code has been used and cannot be reused. Download links expire in 5 minutes.</p>
+                      </motion.div>
+                    )}
+
+                    {licenseKey && (
+                      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+                          <Check className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <h2 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">License Key Ready!</h2>
+                        <p className="mt-2 text-sm text-gray-500">Enter this key in Class House Manager to activate your subscription.</p>
+                        <div className="mt-6 rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/30">
+                          <code className="block break-all text-center font-mono text-lg font-bold text-emerald-700 dark:text-emerald-300">{licenseKey}</code>
+                        </div>
+                        <Button onClick={copyKey} className="mt-4 w-full"><Copy className="mr-2 h-4 w-4" /> {copied ? "Copied!" : "Copy License Key"}</Button>
+                        <p className="mt-4 text-xs text-gray-400"><ShieldCheck className="inline h-3 w-3" /> Your purchase code has been used. Keep this license key safe.</p>
+                      </motion.div>
+                    )}
+                  </div>
                 )}
               </div>
             </motion.div>
