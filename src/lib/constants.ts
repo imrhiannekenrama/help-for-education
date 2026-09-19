@@ -1,9 +1,9 @@
-﻿// App-wide constants for Help for Education
+// App-wide constants for Help for Education
 
 export const SITE_NAME = "Help for Education";
 export const TAGLINE = "Premium Digital Resources for Educators";
 export const SITE_URL = "https://help-for-education.vercel.app";
-export const FACEBOOK_PAGE = "https://facebook.com/helpforeducation";
+export const FACEBOOK_PAGE = "https://m.me/rhiannekenrama";
 export const CONTACT_EMAIL = "support@helpforeducation.org";
 
 export const NAV_LINKS = [
@@ -24,7 +24,7 @@ export const FOOTER_LINKS = {
     { label: "Admin Login", href: "/admin/login" },
   ],
   Support: [
-    { label: "Facebook Page", href: "https://facebook.com/helpforeducation" },
+    { label: "Facebook Page", href: FACEBOOK_PAGE },
     { label: "Contact", href: "mailto:support@helpforeducation.org" },
   ],
 };

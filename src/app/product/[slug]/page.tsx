@@ -231,8 +231,8 @@ export default function ProductPage() {
                         Don&apos;t have a code yet?
                       </p>
                       <p className="mt-1 text-xs text-gray-500">Message us on Messenger to order and get your unique code.</p>
-                      <a href={FACEBOOK_PAGE} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400">
-                        <MessageCircle className="h-4 w-4" /> Visit our Facebook Page
+                      <a href={FACEBOOK_PAGE} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-500 px-6 py-3 font-medium text-white hover:opacity-90 transition-opacity">
+                        <MessageCircle className="h-5 w-5" /> Visit our Facebook Page
                       </a>
                     </div>
                   </>
