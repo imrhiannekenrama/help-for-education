@@ -283,7 +283,7 @@ export default function AdminProducts() {
                       <span className="font-medium text-gray-900 dark:text-white">{p.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell>â‚±{p.price}</TableCell>
+                  <TableCell>Ã¢â€šÂ±{p.price}</TableCell>
                   <TableCell>{p.download_count || 0}</TableCell>
                   <TableCell className="max-w-[200px] truncate text-xs text-gray-500">
                     {p.storage_path || p.download_url ? (
@@ -291,7 +291,7 @@ export default function AdminProducts() {
                         <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                           <FileIcon className="h-3 w-3" /> Uploaded file
                         </span>
-                      ) : (p.download_url || "â€”")
+                      ) : (p.download_url || "Ã¢â‚¬â€")
                     ) : (
                       <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">
                         <FileIcon className="h-3 w-3" /> Multiple files
@@ -334,7 +334,7 @@ export default function AdminProducts() {
               <Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1.5" placeholder="Teacher Ultimate Bundle" required />
             </div>
             <div>
-              <Label htmlFor="price">Price (â‚±)</Label>
+              <Label htmlFor="price">Price (Ã¢â€šÂ±)</Label>
               <Input id="price" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="mt-1.5" placeholder="99" required />
             </div>
             <div>
@@ -389,7 +389,7 @@ export default function AdminProducts() {
                     className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-blue-700 dark:text-gray-300"
                   />
                   <p className="text-xs text-gray-400">
-                    Upload multiple files (max 50MB each). Split large products into parts â€” the buyer gets all files at once.
+                    Upload multiple files (max 50MB each). Split large products into parts Ã¢â‚¬â€ the buyer gets all files at once.
                   </p>
 
                   {existingFiles.length > 0 && (
@@ -454,7 +454,6 @@ export default function AdminProducts() {
     </AdminLayout>
   );
 }
-
 
 
 
