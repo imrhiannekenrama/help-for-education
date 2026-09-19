@@ -42,6 +42,7 @@ export default function ProductPage() {
   const [downloadUrls, setDownloadUrls] = useState<{ fileName: string; url: string }[] | null>(null);
   const [licenseKey, setLicenseKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [renewMode, setRenewMode] = useState(false);
 
   useEffect(() => {
     async function fetchProduct() {
@@ -203,8 +204,8 @@ export default function ProductPage() {
                         <KeyRound className="h-6 w-6" />
                       </div>
                       <div>
-                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{product.category === "app" ? "Enter Code to Install" : product.is_license ? "Enter Purchase Code" : "Enter Download Code"}</h2>
-                        <p className="text-xs text-gray-500">{product.category === "app" ? "Enter the code you received after payment to install." : product.is_license ? "Enter the code you received after payment to get your license key." : "Enter the code you received after payment."}</p>
+                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{renewMode ? "Enter Code to Renew" : product.category === "app" ? "Enter Code to Install" : product.is_license ? "Enter Purchase Code" : "Enter Download Code"}</h2>
+                        <p className="text-xs text-gray-500">{renewMode ? "Buy a new code, enter it here, and instantly get a fresh license key." : product.category === "app" ? "Enter the code you received after payment to install." : product.is_license ? "Enter the code you received after payment to get your license key." : "Enter the code you received after payment."}</p>
                       </div>
                     </div>
 
@@ -214,9 +215,15 @@ export default function ProductPage() {
                         <Input id="code" value={code} onChange={(e) => setCode(e.target.value)} className="mt-1.5 font-mono uppercase" placeholder="H4E-XXXX-XXXX-XXXX" required disabled={verifying} />
                       </div>
                       <Button type="submit" className="w-full" disabled={verifying || !code.trim()}>
-                        {verifying ? <><Spinner className="mr-2" /> Verifying...</> : product.category === "app" ? <><Download className="mr-2 h-4 w-4" /> Install</> : product.is_license ? <><KeyRound className="mr-2 h-4 w-4" /> Get License Key</> : <><Download className="mr-2 h-4 w-4" /> Verify & Download</>}
+                        {verifying ? <><Spinner className="mr-2" /> Verifying...</> : renewMode ? <><KeyRound className="mr-2 h-4 w-4" /> Renew Subscription</> : product.category === "app" ? <><Download className="mr-2 h-4 w-4" /> Install</> : product.is_license ? <><KeyRound className="mr-2 h-4 w-4" /> Get License Key</> : <><Download className="mr-2 h-4 w-4" /> Verify & Download</>}
                       </Button>
                     </form>
+
+                    {product.is_license && (
+                      <button type="button" onClick={() => setRenewMode(!renewMode)} className="mt-4 w-full text-center text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
+                        {renewMode ? "Cancel Renewal" : "Subscription expired? Renew here"}
+                      </button>
+                    )}
 
                     <div className="mt-6 rounded-xl bg-blue-50 dark:bg-blue-950/30 p-4">
                       <p className="text-sm text-blue-700 dark:text-blue-300">
@@ -265,6 +272,7 @@ export default function ProductPage() {
                         <Button onClick={copyKey} className="mt-4 w-full"><Copy className="mr-2 h-4 w-4" /> {copied ? "Copied!" : "Copy License Key"}</Button>
                         <p className="mt-4 text-xs text-gray-400"><ShieldCheck className="inline h-3 w-3" /> Your purchase code has been used. Keep this license key safe.</p>
                         <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">Subscription expired? Just buy a new code and enter it on this page to renew.</p>
+                        <Button variant="outline" onClick={() => { setRenewMode(true); setLicenseKey(null); setDownloadUrls(null); }} className="mt-4 w-full"><KeyRound className="mr-2 h-4 w-4" /> Renew Subscription</Button>
                       </motion.div>
                     )}
                   </div>
